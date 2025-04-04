@@ -1,0 +1,333 @@
+"use client";
+import {
+  Home,
+  Inbox,
+  SquarePen,
+  FileText,
+  CheckCircle,
+  Building2,
+  RefreshCcw,
+  PanelLeft,
+} from "lucide-react";
+import {
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  useMediaQuery,
+  IconButton,
+  Box,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+
+type MenuItem = {
+  title: string;
+  icon: any;
+  href: string;
+  activePatterns?: string[];
+};
+
+export function SideBar({
+  role,
+  initialCollapsed = false,
+  children,
+}: {
+  role: string;
+  initialCollapsed?: boolean;
+  children?: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const [open, setOpen] = useState(!initialCollapsed);
+
+  useEffect(() => {
+    if (isMobile) {
+      setOpen(false); // Close sidebar by default on mobile
+    } else {
+      setOpen(!initialCollapsed);
+    }
+  }, [isMobile, initialCollapsed]);
+
+  const handleMenuItemClick = useCallback(() => {
+    setOpen(false); // Close sidebar on any menu item click
+  }, []);
+
+  const toggleSidebar = () => {
+    setOpen((prev) => !prev);
+  };
+
+  const closeSidebar = () => {
+    setOpen(false);
+  };
+
+  const menuItemsByRole: Record<string, MenuItem[]> = {
+    Applicant: [
+      {
+        title: "New Application",
+        icon: Home,
+        href: "/applicant",
+        activePatterns: ["/applicant/form"],
+      },
+      {
+        title: "Renew Application",
+        icon: RefreshCcw,
+        href: "/applicant/renew-application",
+      },
+      {
+        title: "Draft Applications",
+        icon: SquarePen,
+        href: "/applicant/draft-applications",
+      },
+      {
+        title: "Application Status",
+        icon: CheckCircle,
+        href: "/applicant/application-status",
+      },
+    ],
+    "Drugs-Inspector": [
+      {
+        title: "New Applications",
+        icon: FileText,
+        href: "/drugs-inspector",
+        activePatterns: ["/drugs-inspector/view-form"],
+      },
+      {
+        title: "Renewal Applications",
+        icon: RefreshCcw,
+        href: "/drugs-inspector/renewal-applications",
+      },
+    ],
+    "State-Licensing-Authority": [
+      {
+        title: "New Applications",
+        icon: FileText,
+        href: "/state-licensing-authority",
+        activePatterns: ["/state-licensing-authority/view-form"],
+      },
+      {
+        title: "Renewal Applications",
+        icon: RefreshCcw,
+        href: "/state-licensing-authority/renewal-applications",
+      },
+      {
+        title: "Users",
+        icon: Inbox,
+        href: "/state-licensing-authority/users",
+      },
+      {
+        title: "Head Quarter",
+        icon: Building2,
+        href: "/state-licensing-authority/head-quarter",
+      },
+    ],
+  };
+
+  const items = menuItemsByRole[role] || [];
+  const sidebarWidth = 240;
+  const collapsedWidth = 56;
+  const navHeight = 64;
+
+  const isMenuItemActive = (item: MenuItem): boolean => {
+    if (pathname === item.href) return true;
+    if (
+      pathname.startsWith(item.href + "/") &&
+      !hasMoreSpecificMatch(item.href, items)
+    )
+      return true;
+    if (item.activePatterns) {
+      return item.activePatterns.some((pattern) =>
+        pathname.startsWith(pattern)
+      );
+    }
+    return false;
+  };
+
+  const hasMoreSpecificMatch = (
+    basePath: string,
+    items: MenuItem[]
+  ): boolean => {
+    return items.some(
+      (otherItem) =>
+        otherItem.href !== basePath &&
+        otherItem.href.startsWith(basePath + "/") &&
+        pathname.startsWith(otherItem.href)
+    );
+  };
+
+  return (
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      {/* Sidebar */}
+      {(!isMobile || open) && (
+        <Box
+          sx={{
+            width: open ? sidebarWidth : collapsedWidth,
+            height: "100vh",
+            backgroundColor: "#fff",
+            boxShadow: "2px 0 8px rgba(0,0,0,0.1)",
+            transition: "width 0.2s ease-in-out",
+            overflowX: "hidden",
+            position: isMobile ? "fixed" : "relative",
+            left: 0,
+            zIndex: isMobile ? 1300 : 1,
+          }}
+        >
+          {/* Header Section */}
+          <Box
+            sx={{
+              height: navHeight,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: open ? "space-between" : "center",
+              px: 1,
+              borderBottom: "1px solid rgba(0, 0, 0, 0.12)",
+            }}
+          >
+            {open && (
+              <Typography
+                variant="h6"
+                sx={{
+                  ml: 2,
+                  fontWeight: 500,
+                  color: "#1976d2",
+                }}
+              >
+                {role}
+              </Typography>
+            )}
+            <IconButton
+              onClick={toggleSidebar}
+              sx={{
+                color: "#1976d2",
+              }}
+            >
+              <PanelLeft />
+            </IconButton>
+          </Box>
+
+          {/* Navigation List */}
+          <List sx={{ pt: 1 }}>
+            {items.map((item) => {
+              const Icon = item.icon;
+              const isActive = isMenuItemActive(item);
+              return (
+                <Link key={item.title} href={item.href} passHref>
+                  <ListItemButton
+                    component="a"
+                    onClick={handleMenuItemClick}
+                    selected={isActive}
+                    sx={{
+                      py: 1.5,
+                      justifyContent: open ? "initial" : "center",
+                      "&.Mui-selected": {
+                        backgroundColor: "rgba(25, 118, 210, 0.08)",
+                        "&:hover": {
+                          backgroundColor: "rgba(25, 118, 210, 0.12)",
+                        },
+                      },
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 0, 0.04)",
+                      },
+                    }}
+                  >
+                    <ListItemIcon
+                      sx={{
+                        minWidth: open ? 56 : 0,
+                        color: isActive
+                          ? "#1976d2"
+                          : "rgba(0, 0, 0, 0.54)",
+                      }}
+                    >
+                      <Icon />
+                    </ListItemIcon>
+                    {open && (
+                      <ListItemText
+                        primary={item.title}
+                        primaryTypographyProps={{
+                          variant: "body2",
+                          fontWeight: isActive ? 600 : 400,
+                          color: isActive
+                            ? "#1976d2"
+                            : "rgba(0, 0, 0, 0.87)",
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
+                </Link>
+              );
+            })}
+          </List>
+        </Box>
+      )}
+
+      {/* Overlay for Closing Sidebar */}
+      {isMobile && open && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1200,
+          }}
+          onClick={closeSidebar}
+        />
+      )}
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          marginLeft: isMobile
+            ? 0
+            : open
+              ? `${sidebarWidth}px`
+              : `${collapsedWidth}px`,
+          transition: "margin-left 0.2s ease-in-out",
+          width: isMobile
+            ? "100%"
+            : open
+              ? `calc(100% - ${sidebarWidth}px)`
+              : `calc(100% - ${collapsedWidth}px)`,
+          pt: `${navHeight}px`,
+          backgroundColor: "#fafafa",
+          minHeight: "100vh",
+          position: "relative",
+          zIndex: 1000,
+        }}
+      >
+        {isMobile && !open && (
+          <Box
+            sx={{
+              position: "fixed",
+              top: 8,
+              left: 8,
+              zIndex: 1300,
+            }}
+          >
+            <IconButton
+              onClick={toggleSidebar}
+              sx={{
+                backgroundColor: "#fff",
+                boxShadow: "0px 2px 4px rgba(0,0,0,0.1)",
+                "&:hover": {
+                  backgroundColor: "#f5f5f5",
+                },
+              }}
+            >
+              <PanelLeft />
+            </IconButton>
+          </Box>
+        )}
+        {children}
+      </Box>
+    </Box>
+  );
+}
